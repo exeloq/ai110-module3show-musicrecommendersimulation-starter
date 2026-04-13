@@ -17,18 +17,75 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
+How real-world recommendations work:
+Music platforms such as Spotify, Apple Music, YouTube, have algorithms for music recommendations that use both the Social Approach: Collaborative Filtering, and the Audio Approach: Content-Based Filtering. 
+
+Collaborative filtering relies solely on user behavior and the wisdom of the crowd. It operates on the premise that if User A and User B have similar listening data, User A will likely enjoy the songs that User B has played.
+
+Content-based filtering analyzes the actual audio and metadata of the songs. Platforms extract hundreds of audio features by mapping out the BPM, key, time signature, "danceability," acousticness, and energy levels. It then mathematically matches the profile of songs to the songs the user has listened to.
+
 Explain your design in plain language.
 
 Some prompts to answer:
 
 - What features does each `Song` use in your system
   - For example: genre, mood, energy, tempo
+
+  Currently, we will use these features of the song to "Score" and "Rank" our songs:
+  artist name, genre, mood, energy, tempo_bpm, valence, danceability, and acousticness. 
+  
+  Because the top 10 songs by score might all be by the exact same artist, or from the exact same album, we need a system to balance these out. We can do this by penalizing songs that are by the same artist(s) and lower their ranking.
+
 - What information does your `UserProfile` store
+ In our UserProfile dataclass thats in recommender.py, we store the user's music preferences:
+ favorite_genre, favorite_mood, target_energy, likes_acoustic. THe recommender class then uses these preferences to score and rank new songs.
 - How does your `Recommender` compute a score for each song
+The recommender will compare each song's attributes with the ones in UserProfile, then assign a score. We use a weighted proximity formula to score each song. It will first filter the catalog to only songs that match the user's preferred genre. It then makes two comparisons: category match (genre and mood), scores 1.0 if the song's value matches the user's preference, 0 if not. Each then multiplied by its assigned weight. 
+
+The energy, acousticness, valence, danceability, tempo features use this formula:
+Weight × (1 − |user_target − song_value|).
+This rewards songs that are close th the user's target value on a scale, rather than favoring high or low values. Tempo will be normalized from BPM to a 0.1 to fit this formula. This weay, all components are summed into a single score for each song while being more precise.
+
 - How do you choose which songs to recommend
+After scoring, songs are sorted from highest to lowest score. Before returning the top results, a diversity pass is applied: if multiple high-scoring songs share the same artist, later songs by that artist are penalized and pushed down the ranking. This prevents the top recommendations from being dominated by a single artist. The final top k songs after this reranking are returned as the recommendations.
 
-You can include a simple diagram or bullet list if helpful.
+## The specific features your Song and UserProfile objects will use
+Song Object Features
 
+| Field          | Type    | Role in Scoring                                       |
+|----------------|---------|-------------------------------------------------------|
+| `id`           | `int`   | Identifier only, not scored                           |
+| `title`        | `str`   | Display only, not scored                              |
+| `artist`       | `str`   | Used in diversity penalty phase                       |
+| `genre`        | `str`   | Hard filter before scoring                            |
+| `mood`         | `str`   | Categorical match (weighted binary)                   |
+| `energy`       | `float` | Continuous proximity score                            |
+| `tempo_bpm`    | `float` | Continuous proximity score (normalized to 0–1 first)  |
+| `valence`      | `float` | Continuous proximity score                            |
+| `danceability` | `float` | Continuous proximity score                            |
+| `acousticness` | `float` | Continuous proximity score                            |
+
+UserProfile Object Features
+
+| Field                 | Type    | Role                                       |
+|-----------------------|---------|--------------------------------------------|
+| `favorite_genre`      | `str`   | Drives the hard filter                     |
+| `favorite_mood`       | `str`   | Categorical match target                   |
+| `target_energy`       | `float` | Proximity target for `song.energy`         |
+| `target_acousticness` | `float` | Proximity target for `song.acousticness`   |
+| `target_valence`      | `float` | Proximity target for `song.valence`        |
+| `target_danceability` | `float` | Proximity target for `song.danceability`   |
+| `target_tempo_bpm`    | `float` | Proximity target for `song.tempo_bpm`      |
+
+
+
+## Algorithm Recipe:
+
+![Algorithm Recipe](images/algorithm_recipe.png)
+
+
+## CLI Verification:
+![First Run](images/first_run.png)
 ---
 
 ## Getting Started

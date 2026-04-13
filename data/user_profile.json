@@ -1,0 +1,9 @@
+{
+    "favorite_genre": "pop",
+    "favorite_mood": "happy",
+    "target_energy": 0.9,
+    "target_acousticness": 0.15,
+    "target_valence": 0.6,
+    "target_danceability": 0.9,
+    "target_tempo_bpm": 100
+}

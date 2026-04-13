@@ -35,10 +35,10 @@ Genre is used as a hard filter before scoring begins. Mood is evaluated as a cat
 The UserProfile stores seven preferences: favorite_genre, favorite_mood, target_energy, target_acousticness, target_valence, target_danceability, and target_tempo_bpm. Each one maps directly to a feature in the Song object and contributes its own component to the final score.
 
 - How does the model turn those into a score
-Genre filters the candidate pool first. Then for each remaining song, mood is compared as a binary match worth up to 1.5 points. The five continuous features are each scored using the formula Weight x (1 - abs(user_target - song_value)), which produces a value between 0 and 1 scaled by the feature's weight. All components are summed into a single total score, songs are sorted highest to lowest, and the top k results are returned with a per-component breakdown explaining each score.
+Genre filters the catalog pool. Then for each song, mood is compared as a binary match worth 0 to 1.5 points. The five continuous features are each scored using this formula: Weight x (1 - abs(user_target - song_value)), which produces a value between 0 and 1 scaled by the feature's weight. All components are added up into a single total score, songs are sorted highest to lowest, and the top k results are returned with a breakdown explanation of each score.
 
 - What changes did you make from the starter logic
-The starter used a simple points system where genre match added 2.0 points and mood match added 1.0 point, with a rough energy similarity bonus. We replaced this entirely with a weighted proximity model that evaluates five continuous dimensions instead of one, treats genre as a hard filter rather than a bonus, replaces the boolean likes_acoustic field with a float target, and adds targets for valence, danceability, and tempo that the original system did not consider at all.
+The starter used a simple points system where genre match added 2.0 points and mood match added 1.0 point, with a rough energy similarity bonus. I replaced this with a weighted proximity model that evaluates five dimensions instead of one, treats genre as a hard filter rather than a high weight bonus, replaces the boolean likes_acoustic field with a float target, and adds targets for valence, danceability, and tempo.
 
 Avoid code here. Pretend you are explaining the idea to a friend who does not program.
 
@@ -104,10 +104,17 @@ How you checked whether the recommender behaved as expected.
 
 Prompts:  
 
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
+- Which user profiles you tested
+I tested three regular profiles (High-Energy Pop, Chill Lofi, Deep Intense Rock) and five edge cases to stress-test the system: a conflicting energy and mood combination using soul with a high energy pref, a ghost genre request for blues which has no songs in the catalog, a neutral profile with all targets at 0.5, an impossible lofi profile that preferred features no lofi song has, and a jazz profile requesting an angry mood that no jazz song in our catalog has.
+
+- What you looked for in the recommendations
+For each result I checked that the genre filter was working correctly, that the mood field in the output matched or did not match the user target as expected, and that the score breakdown showed higher component values for features where the song was close to the user target and lower values where it was far. We also checked that the ghost genre case returned zero results without crashing.
+
+- What surprised you
+The impossible lofi edge case was the most surprising. Even though every continuous target was the opposite of what lofi songs offer, the system still returned lofi results because the hard genre filter left no other candidates. The score breakdowns showed low component values across the board, but the system had no way to signal that the profile itself was contradictory.
+
+- Any simple tests or comparisons you ran
+I compared the score breakdowns between the High-Energy Pop profile and the Chill Lofi profile on songs they shared no genre with, confirming the filter was eliminating them correctly. I also cross-checked the Deep Intense Rock output manually against the songs.csv values for Storm Runner to verify the proximity math was producing the expected gap values in the printed breakdown.
 
 No need for numeric metrics unless you created some.
 
@@ -120,9 +127,16 @@ Ideas for how you would improve the model next.
 Prompts:  
 
 - Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+What would definitely help this model is to expand the dataset and adapt the algorithm to be able to cross examine and score each song in milliseconds. Add a language field, a listening context field (workout, study, commute) on UserProfile, and subgenre tags to the Song object. These three additions would capture the most common reasons the current system returns results that look correct but intuitively wrong because of circumstances.
+
+- Better ways to explain recommendations
+Instead of printing all six score components every time, only surface the two or three that most influenced the result. Flag any component where the gap was large enough to meaningfully hurt the score.
+
+- Improving diversity among the top results
+Implement the artist diversity penalty, which penalizes songs in the ranking that are by the same artist. After that, add a re-ranking step that penalizes results that are too similar to each other, not just results from the same artist.
+
+- Handling more complex user tastes
+Let users define preferences as ranges instead of single target values. Support multiple profiles per user so a workout session and a study session produce different results. Instead of the hardcoded weights that we currently work with, make an adaptable system with values learned from user feedback over time.
 
 ---
 
@@ -132,6 +146,9 @@ A few sentences about your experience.
 
 Prompts:  
 
-- What you learned about recommender systems  
+- What you learned about recommender systems 
+Recommenders like the one I just built using Claude simply use math, often vector matrices,to come up with scores for each song while comparing them to the ones the user has shown interest in. In this case, the "user" in our test profiles explicitly has "provided" us with their preferences. They use a scoring algorithm to score songs based on likeness, ranks them, then presents them to the user.
 - Something unexpected or interesting you discovered  
+I discovered that systems like this can utilize things I learned in Linear Algebra class like vector matrices, to "score" songs in multiple "dimensions". This is pretty cool and also deepens my understanding of AI models and how they examine data.
 - How this changed the way you think about music recommendation apps  
+Before, I used to think the music recommendation system of apps like Spotify and Apple Music used tokenization of the attributes of songs to then match songs to the ones the user has shown interest in. Even though this is the system we used, the research I was asked to do was on collaborative filtering. From this research, I learned that complex systems actually rely on the listening history of users within the umbrella of the user's history to then suggest songs the fellow users enjoy listening to.

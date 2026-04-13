@@ -89,7 +89,7 @@ UserProfile Object Features
 ---
 
 
-## Sample Outputs
+## STRESS TESTING
 
 ### High-Energy Pop
 ![High Energy Pop](images/High_Energy_Pop.png)
@@ -159,11 +159,27 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+Use this section to document the experiments you ran. 
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+- What happened when we ran different user profiles
+
+High-Energy Pop had three candidates and produced clear separation: Sunrise City scored ~6.37 versus Gym Hero's ~4.94, the gap driven almost entirely by Gym Hero's mood mismatch. Deep Intense Rock had one candidate, making the ranking phase meaningless. Chill Lofi had three candidates but scores clustered within 0.4 points because all three lofi songs have nearly identical feature values.
+
+- What happened when we lowered the energy weight from 1.5 to 0.5
+
+Rankings stayed the same but the gap between Sunrise City and Gym Hero narrowed significantly, and acousticness and danceability started influencing results more. The output felt more balanced rather than dominated by a single feature.
+
+- What happened with the impossible lofi edge case
+
+All three lofi candidates scored below 4.0 with near-zero energy and acousticness components. The system returned results anyway because the genre filter left no alternatives. The score breakdown made the contradiction visible but the system could not warn the user.
+
+- What happened with the ghost genre edge case
+
+Requesting blues returned an empty list instantly with no crash.
+
+- How the system behaved for the perfectly neutral profile
+
+Sunrise City and Gym Hero scored within 0.3 points of each other. Neither song was close or far enough from any 0.5 target to separate meaningfully.
 
 ---
 
@@ -176,6 +192,12 @@ Examples:
 - It only works on a tiny catalog
 - It does not understand lyrics or language
 - It might over favor one genre or mood
+
+
+The catalog has 20 songs, so most genres have exactly one candidate after the genre filter. The ranking phase produces pretty much no meaningful differentiation when there is only one song to rank aside from the score.
+Energy is weighted 1.5 while acousticness, valence, danceability, and tempo are each weighted 1.0. The system favors users who define their taste by energy over users who define it by atmosphere.
+The system has no memory. It cannot learn that a user consistently skips low-valence suggestions, and it cannot adjust weights based on feedback.
+Listening context is ignored entirely. The same profile produces the same results whether the user wants background music for studying or for work outs.
 
 You will go deeper on this in your model card.
 
@@ -190,7 +212,9 @@ Read and complete `model_card.md`:
 Write 1 to 2 paragraphs here about what you learned:
 
 - about how recommenders turn data into predictions
+Recommenders like the one I just built using Claude simply use math, often vector matrices,to come up with scores for each song while comparing them to the ones the user has shown interest in. In this case, the "user" in our test profiles explicitly has "provided" us with their preferences. They use a scoring algorithm to score songs based on likeness, ranks them, then presents them to the user.
 - about where bias or unfairness could show up in systems like this
+Systems like this get complicated in trying to address bias towards some less popular genres or "moods", and the datasets and algorithms can get pretty large. For example, although pretty much every genre in the world has millions of songs, some have billions, which make it hard to provide the perfect suggestion for enjoyers of some genres without presenting songs they probably have already listened to.
 
 
 ---

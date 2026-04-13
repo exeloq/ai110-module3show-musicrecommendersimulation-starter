@@ -88,6 +88,40 @@ UserProfile Object Features
 ![First Run](images/first_run.png)
 ---
 
+
+## Sample Outputs
+
+### High-Energy Pop
+![High Energy Pop](images/High_Energy_Pop.png)
+
+### Chill Lofi
+![Chill Lofi](images/Chill_Lofi.png)
+
+### Deep Intense Rock
+![Deep Intense Rock](images/Deep_Intensve_Rock.png)
+
+---
+
+## Edge Case Tests
+
+![Edge Case Tests Header](images/EDGE%20CASE%20TESTS.png)
+
+### Edge Case 1
+![Edge Case 1](images/EDGE%20CASE_1.png)
+
+### Edge Case 2
+![Edge Case 2](images/EDGE%20CASE_2.png)
+
+### Edge Case 3
+![Edge Case 3](images/EDGE%20CASE_3.png)
+
+### Edge Case 4
+![Edge Case 4](images/EDGE%20CASE_4.png)
+
+### Edge Case 5
+![Edge Case 5](images/EDGE%20CASE_5.png)
+
+
 ## Getting Started
 
 ### Setup
